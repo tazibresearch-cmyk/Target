@@ -205,10 +205,4 @@ with tab3:
     
     st.dataframe(ranked_df.head(10), use_container_width=True)
 
-    st.markdown("### 🔍 Recommended Processing Windows")
-    st.write("Below are the grouped formulation settings evaluated from the dataset. Rows are sorted to show optimal oxygen blocks first:")
     
-    # FIXED: Group by formulation first, THEN filter the aggregates so high-yield windows appear cleanly
-    grouped_runs = df_synthetic.groupby(['Is_Xray', 'Dose', 'GEL', 'RF', 'OBE']).mean().reset_index()
-    
-    # Filter using relaxed, realistic criteria to prevent an empty display grid
