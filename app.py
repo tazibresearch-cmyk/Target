@@ -160,14 +160,16 @@ with tab2:
 
 with tab3:
     st.subheader("🧀 Target Assessment: Premium Cheese Packaging Suitability")
+    st.markdown("Target Parameters: **Elongation at Break > 200%** (Flexibility) and **OTR < 20 cc/m².day** (Oxidative Protection).")
     
-    elong_ok = predictions['Elongation'] >= 300.0
-    otr_ok = predictions['OTR'] <= 10.0
+    # Updated threshold metrics mapping
+    elong_ok = predictions['Elongation'] >= 200.0
+    otr_ok = predictions['OTR'] <= 20.0
     
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown(f"**Structural Elasticity Check (>300%):** {'🟢 PASSED' if elong_ok else '🔴 FAILED'} ({predictions['Elongation']:.1f}%)")
-        st.markdown(f"**Oxygen Blockade Check (<10 cc):** {'🟢 PASSED' if otr_ok else '🔴 FAILED'} ({predictions['OTR']:.2f} cc/m².day)")
+        st.markdown(f"**Structural Elasticity Check (>200%):** {'🟢 PASSED' if elong_ok else '🔴 FAILED'} ({predictions['Elongation']:.1f}%)")
+        st.markdown(f"**Oxygen Blockade Check (<20 cc):** {'🟢 PASSED' if otr_ok else '🔴 FAILED'} ({predictions['OTR']:.2f} cc/m².day)")
         
     with c2:
         if elong_ok and otr_ok:
@@ -176,13 +178,12 @@ with tab3:
             st.error("⚠️ SUB-OPTIMAL BOUNDARY: Crosslinking density or structural additions fail packaging compliance standards at this point.")
 
     st.markdown("### 🔍 Recommended Processing Windows")
+    st.write("Below are the experimental data configurations that match your new targets:")
+    
+    # Updated filter rules for recommendation table query
     ideal_runs = df_synthetic[
-        (df_synthetic['Elongation'] >= 220) & (df_synthetic['OTR'] <= 25)
+        (df_synthetic['Elongation'] >= 200) & (df_synthetic['OTR'] <= 20)
     ].groupby(['Is_Xray', 'Dose', 'GEL', 'RF', 'OBE']).mean().reset_index()
     
     if not ideal_runs.empty:
         ideal_runs['Radiation_System'] = ideal_runs['Is_Xray'].apply(lambda x: "X-Ray" if x==1 else "UV-C")
-        display_cols = ['Radiation_System', 'Dose', 'GEL', 'RF', 'OBE', 'Elongation', 'OTR', 'Tensile_Strength', 'Tmax']
-        st.dataframe(ideal_runs[display_cols].sort_values(by='OTR').head(10), use_container_width=True)
-    else:
-        st.info("No matching high-performance records found in synthetic space. Modify parameters to expand search criteria.")
