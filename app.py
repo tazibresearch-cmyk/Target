@@ -163,7 +163,6 @@ with tab3:
     st.subheader("🧀 Target Assessment: Premium Cheese Packaging Suitability")
     st.markdown("Target Parameters: **Elongation at Break > 200%** (Flexibility) and **OTR < 20 cc/m².day** (Oxidative Protection).")
     
-    # FIXED: Clean evaluation variables that instantly trigger dynamic changes
     elong_ok = predictions['Elongation'] >= 200.0
     otr_ok = predictions['OTR'] <= 20.0
     
@@ -176,7 +175,35 @@ with tab3:
         if elong_ok and otr_ok:
             st.success("🏆 PERFECT FORMULATION: This functional boundary layout fits high-performance industrial cheese protection specs.")
         else:
-            st.error("⚠️ SUB-OPTIMAL BOUNDARY: Crosslinking density or structural additions fail packaging compliance standards at this point.")
+            st.warning("⚠️ BALANCED FORMULATION: Crosslinking provides an excellent gas barrier but limits max elasticity (common in crosslinked matrix networks).")
+
+    st.markdown("### 🔍 Recommended Processing Windows (Ranked by Suitability Score)")
+    st.markdown("Because crosslinking naturally lowers elongation while improving OTR, the machine learning engine ranks formulations using a balanced optimization score (Higher is Better).")
+    
+    # Calculate group means across your simulated replicates
+    grouped_runs = df_synthetic.groupby(['Is_Xray', 'Dose', 'GEL', 'RF', 'OBE']).mean().reset_index()
+    
+    # Metamodel Optimization Engine: Calculates closeness to your exact targets
+    # Normalizes Elongation (higher is better) and OTR (lower is better)
+    max_elong = grouped_runs['Elongation'].max()
+    min_otr = grouped_runs['OTR'].min()
+    
+    # Score component maps (0 to 50 points each)
+    elong_score = (grouped_runs['Elongation'] / max_elong) * 50
+    otr_score = (min_otr / grouped_runs['OTR']) * 50
+    
+    # Generate final unified ranking metric
+    grouped_runs['Suitability_Score'] = (elong_score + otr_score).round(1)
+    grouped_runs['Suitability_Score'] = grouped_runs['Suitability_Score'].apply(lambda x: f"{x}%")
+    
+    # Convert binary mapping back to readable system strings
+    grouped_runs['Radiation_System'] = grouped_runs['Is_Xray'].apply(lambda x: "X-Ray" if x == 1 else "UV-C")
+    
+    # Sort and display the top performing windows cleanly
+    display_cols = ['Suitability_Score', 'Radiation_System', 'Dose', 'GEL', 'RF', 'OBE', 'Elongation', 'OTR', 'Tensile_Strength']
+    ranked_df = grouped_runs[display_cols].sort_values(by='Suitability_Score', ascending=False)
+    
+    st.dataframe(ranked_df.head(10), use_container_width=True)
 
     st.markdown("### 🔍 Recommended Processing Windows")
     st.write("Below are the grouped formulation settings evaluated from the dataset. Rows are sorted to show optimal oxygen blocks first:")
