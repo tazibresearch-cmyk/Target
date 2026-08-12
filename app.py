@@ -141,9 +141,10 @@ dose = st.sidebar.slider("Active Energy Exposure Level", 0.0, 11.0, 4.32, 0.1)
 query_raw = np.array([[pbat, pbs, granite, plast_type, gel, rf, obe, is_xray, dose, thickness]])
 query_scaled = feature_scaler.transform(query_raw)
 
+# FIXED: Explicitly indexing using [0] handles array-to-float conversions cleanly
 predictions = {}
 for target, model in models.items():
-    predictions[target] = float(model.predict(query_scaled))
+    predictions[target] = float(model.predict(query_scaled)[0])
 
 tab1, tab2, tab3 = st.tabs(["📊 Performance Parameter Engine", "🌌 3D Energy Interaction Mesh", "🧀 Food Technology Assessment"])
 
@@ -155,4 +156,3 @@ with tab1:
     with col1:
         st.info("⚓ Mechanical Properties")
         st.metric("Tensile Strength (TS)", f"{predictions['Tensile_Strength']:.2f} MPa")
-        st.metric("Elastic Modulus", f"{predictions['Modulus']:.2f} MPa")
