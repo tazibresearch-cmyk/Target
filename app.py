@@ -11,10 +11,6 @@ st.set_page_config(page_title="Biopolymer Metamodel Studio", layout="wide")
 # ==========================================
 # 1. SCIENTIFICALLY ALIGNED SOURCE MATRIX
 # ==========================================
-# Encoding arrays:
-# Features: [PBAT%, PBS%, YG%, Plasticizer, GEL%, RF%, OBE%, Is_Xray, Dose, Thickness]
-# Plasticizer mapping: 0 = Glycerol (Gly), 1 = Tributyl Citrate (TBC), 3 = Commercial Control
-# Targets:   [TS_m, TS_s, Mod_m, Mod_s, Elong_m, Elong_s, OTR_m, OTR_s, Tm1, Tg, Tc, Tmax]
 source_matrix = np.array([
     # --- PHASE 1: STRUCTURAL BASE BLENDS (Uncoated, Unirradiated Controls) ---
     [100, 0,  0,  3, 0, 0,    0, 0, 0,    0.198,  31.86, 2.31,  3.84,  0.45,  644.66, 9.29,  12.72,  0.15,  44.9,  -31.86, 68.7,  418.72], # Bergeron
@@ -37,7 +33,7 @@ source_matrix = np.array([
     [90,  10, 10, 1, 0, 0,    0, 0, 0,    0.092,  12.93, 0.60,  0.73,  0.06,  585.33, 18.5,  1195.5,  9.2,   44.9,  -31.86, 68.7,  418.72],
     [90,  10, 15, 1, 0, 0,    0, 0, 0,    0.121,  8.60,  0.10,  0.71,  0.03,  377.3,  11.1,  1555.0,  77.7,  44.9,  -31.86, 68.7,  418.72],
 
-    # --- PHASE 2A: UV-C IRRADIATED FUNCTIONAL BIO-FILMS (Locked Structural Matrix PBAT95/PBS5/YG15) ---
+    # --- PHASE 2A: UV-C IRRADIATED FUNCTIONAL BIO-FILMS ---
     [95,  5,  15, 0, 8, 0,    0, 0, 0,    0.230,  12.37, 0.32,  1.21,  0.81,  246.33, 41.50, 15.1,    1.5,   44.75, -32.48, 70.7,  417.97],
     [95,  5,  15, 0, 8, 1.25, 0, 0, 1.92,  0.272,  10.57, 0.15,  14.86, 3.90,  170.0,  49.49, 286.25,  8.8,   44.9,  -32.18, 69.8,  418.72],
     [95,  5,  15, 0, 4, 1.25, 0, 0, 4.32,  0.240,  12.77, 0.15,  2.247, 1.29,  220.67, 16.26, 126.98,  7.09,  44.7,  -33.43, 71.4,  421.25],
@@ -46,7 +42,7 @@ source_matrix = np.array([
     [95,  5,  15, 0, 4, 1.25, 0, 0, 10.56, 0.237,  11.27, 0.61,  1.51,  0.27,  190.67, 29.69, 14.97,   1.3,   45.2,  -33.78, 69.2,  418.06],
     [95,  5,  15, 0, 4, 1.25, 5, 0, 8.16,  0.301,  6.58,  0.43,  41.53, 7.11,  51.63,  8.06,  563.5,   50.2,  45.7,  -34.8,  71.9,  417.85],
 
-    # --- PHASE 2B: X-RAY IRRADIATED FUNCTIONAL BIO-FILMS (Locked Structural Matrix PBAT95/PBS5/YG15) ---
+    # --- PHASE 2B: X-RAY IRRADIATED FUNCTIONAL BIO-FILMS ---
     [95,  5,  15, 0, 4, 1.25, 0, 1, 0.5,   0.233,  10.71, 1.04,  1.63,  0.47,  238.33, 47.42, 7.12,    1.71,  43.5,  -34.2,  69.5,  420.22],
     [95,  5,  15, 0, 4, 1.25, 0, 1, 1.0,   0.265,  10.14, 0.84,  5.56,  0.54,  146.67, 20.11, 16.62,   1.66,  45.3,  -32.75, 73.8,  418.37],
     [95,  5,  15, 0, 4, 1.25, 0, 1, 2.5,   0.225,  9.987, 0.533, 7.783, 6.591, 146.0,  47.466, 10.25,   1.33,  50.6,  -33.38, 73.0,  419.79],
@@ -137,14 +133,14 @@ rad_selection = st.sidebar.selectbox("Irradiation Configuration Spectrum", ["UV-
 is_xray = 1.0 if "X-Ray" in rad_selection else 0.0
 dose = st.sidebar.slider("Active Energy Exposure Level", 0.0, 11.0, 4.32, 0.1)
 
-# Format the inputs for prediction
+# Format inputs for prediction
 query_raw = np.array([[pbat, pbs, granite, plast_type, gel, rf, obe, is_xray, dose, thickness]])
 query_scaled = feature_scaler.transform(query_raw)
 
-# FIXED: Explicitly indexing using [0] handles array-to-float conversions cleanly
+# Generate unified machine learning predictions 
 predictions = {}
-for target, model in models.items():
-    predictions[target] = float(model.predict(query_scaled)[0])
+for target in ['Tensile_Strength', 'Modulus', 'Elongation', 'OTR', 'Tm1', 'Tg', 'Tc', 'Tmax']:
+    predictions[target] = float(models[target].predict(query_scaled)[0])
 
 tab1, tab2, tab3 = st.tabs(["📊 Performance Parameter Engine", "🌌 3D Energy Interaction Mesh", "🧀 Food Technology Assessment"])
 
@@ -156,3 +152,97 @@ with tab1:
     with col1:
         st.info("⚓ Mechanical Properties")
         st.metric("Tensile Strength (TS)", f"{predictions['Tensile_Strength']:.2f} MPa")
+        st.metric("Elastic Modulus", f"{predictions['Modulus']:.2f} MPa")
+        st.metric("Elongation at Break (Eb)", f"{predictions['Elongation']:.1f} %")
+        
+    with col2:
+        st.warning("🛡️ Gas Transport Permeability")
+        st.metric("Oxygen Transmission Rate (OTR)", f"{predictions['OTR']:.2f} cc/m².day")
+
+    with col3:
+        st.success("🔥 Thermal Phase Transitions")
+        st.metric("Melting Phase (Tm1)", f"{predictions['Tm1']:.1f} °C")
+        st.metric("Glass Transition (Tg)", f"{predictions['Tg']:.1f} °C")
+        st.metric("Crystallisation Peak (Tc)", f"{predictions['Tc']:.1f} °C")
+        st.metric("Max Degradation (Tmax)", f"{predictions['Tmax']:.1f} °C")
+
+# --- TAB 2: FIXED 3D VISUALIZATION GRAPH ---
+with tab2:
+    st.subheader("🌌 Multi-Variable 3D Optimization Space Mesh")
+    st.markdown("This response graph maps interactive changes between processing variables and outputs.")
+    
+    x_axis_var = st.selectbox("Select X-Axis Vector", ['Dose', 'PBAT', 'Granite', 'Thickness'])
+    y_axis_var = st.selectbox("Select Y-Axis Vector", ['Granite', 'Thickness', 'GEL', 'Dose'], index=1)
+    z_axis_target = st.selectbox("Select Target Property Grid (Z-Axis)", ['Elongation', 'OTR', 'Tensile_Strength', 'Tmax'])
+    
+    # Generate spatial arrays
+    x_space = np.linspace(0, 11 if x_axis_var=='Dose' else (100 if x_axis_var=='PBAT' else 15), 20)
+    y_space = np.linspace(5 if y_axis_var=='Granite' else 0.08, 15 if y_axis_var=='Granite' else 0.35, 20)
+    X_grid, Y_grid = np.meshgrid(x_space, y_space)
+    
+    mesh_rows = []
+    for x_val, y_val in zip(X_grid.ravel(), Y_grid.ravel()):
+        pbat_i = x_val if x_axis_var == 'PBAT' else pbat
+        pbs_i = 100 - pbat_i
+        gran_i = x_val if x_axis_var == 'Granite' else (y_val if y_axis_var == 'Granite' else granite)
+        thick_i = x_val if x_axis_var == 'Thickness' else (y_val if y_axis_var == 'Thickness' else thickness)
+        gel_i = y_val if y_axis_var == 'GEL' else gel
+        dose_i = x_val if x_axis_var == 'Dose' else (y_val if y_axis_var == 'Dose' else dose)
+        
+        mesh_rows.append([pbat_i, pbs_i, gran_i, plast_type, gel_i, rf, obe, is_xray, dose_i, thick_i])
+        
+    mesh_scaled = feature_scaler.transform(np.array(mesh_rows))
+    mesh_preds = models[z_axis_target].predict(mesh_scaled).reshape(20, 20)
+    
+    # Generate the 3D surface plot using Plotly
+    fig = go.Figure(data=[go.Surface(z=mesh_preds, x=x_space, y=y_space, colorscale='Plasma')])
+    fig.update_layout(
+        title=f"3D Material Interaction Space Matrix: {z_axis_target}",
+        scene=dict(xaxis_title=x_axis_var, yaxis_title=y_axis_var, zaxis_title=z_axis_target),
+        margin=dict(l=0, r=0, b=0, t=40),
+        width=850, height=600
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+# --- TAB 3: PACKAGING APPLICATION CRITERIA ---
+with tab3:
+    st.subheader("🧀 Food Technology Suitability Assessment: Premium Cheese Packaging")
+    st.markdown("According to packaging physics literature, ideal flexible covers for cheese require a structure balancing flexibility with gas barriers (**Elongation at Break > 200%** and **OTR < 20 cc/m²·day**).")
+    
+    # Run structural compliance evaluations
+    elong_pass = predictions['Elongation'] >= 200.0
+    otr_pass = predictions['OTR'] <= 20.0
+    
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown(f"**Structural Elasticity Check (>200%):** {'🟢 PASSED' if elong_pass else '🔴 FAILED'} ({predictions['Elongation']:.1f} %)")
+        st.markdown(f"**Oxygen Barrier Seal Check (<20 cc):** {'🟢 PASSED' if otr_pass else '🔴 FAILED'} ({predictions['OTR']:.2f} cc/m².day)")
+        
+    with col_b:
+        if elong_pass and otr_pass:
+            st.success("🏆 OPTIMAL PACKAGING FILM CONFIGURATION FOUND: This specific formulation meets the strict criteria needed for cheese storage.")
+        else:
+            st.warning("⚠️ ALTERNATIVE BALANCED RECIPE REQUIRED: Adjust the sliders to optimize the crosslinking network blend balance.")
+
+    st.markdown("### 🔍 Recommended Recipe Windows (Ranked by Packaging Suitability Score)")
+    
+    # Build a Pareto ranking table using the source dataset
+    grouped_runs = df_synthetic.groupby(['PBAT', 'PBS', 'Granite', 'Plasticizer_Type', 'GEL', 'RF', 'OBE', 'Is_Xray', 'Dose']).mean().reset_index()
+    
+    max_el = grouped_runs['Elongation'].max()
+    min_ot = grouped_runs['OTR'].min()
+    
+    # Optimization scoring
+    score_metric = ((grouped_runs['Elongation'] / max_el) * 50) + ((min_ot / grouped_runs['OTR']) * 50)
+    grouped_runs['Suitability_Score'] = score_metric.round(1)
+    
+    # Map labels
+    p_names = {0: "Glycerol", 1: "TBC", 3: "Commercial Base"}
+    grouped_runs['Plasticizer'] = grouped_runs['Plasticizer_Type'].map(p_names)
+    grouped_runs['Radiation_System'] = grouped_runs['Is_Xray'].apply(lambda x: "X-Ray" if x==1 else "UV-C")
+    
+    sorted_df = grouped_runs.sort_values(by='Suitability_Score', ascending=False)
+    sorted_df['Suitability_Score'] = sorted_df['Suitability_Score'].apply(lambda x: f"{x}%")
+    
+    display_columns = ['Suitability_Score', 'PBAT', 'Granite', 'Plasticizer', 'Radiation_System', 'Dose', 'Elongation', 'OTR', 'Tensile_Strength', 'Tmax']
+    st.dataframe(sorted_df[display_columns].head(12), use_container_width=True)
