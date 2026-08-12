@@ -68,13 +68,11 @@ def run_monte_carlo_simulation(replicates=1200):
         tm1, tg, tc, tmax = row[18:]
         
         for _ in range(replicates):
-            # Apply Gaussian noise based on reported experimental standard deviations
             ts = max(0.1, np.random.normal(ts_m, ts_s))
             mod = max(0.01, np.random.normal(mod_m, mod_s))
             el = max(1.0, np.random.normal(el_m, el_s))
             otr = max(0.1, np.random.normal(OTR_m, OTR_s))
             
-            # Simulated tight instrument variance metrics (DSC / TGA)
             s_tm1 = np.random.normal(tm1, 0.4)
             s_tg  = np.random.normal(tg, 0.3)
             s_tc  = np.random.normal(tc, 0.4)
@@ -155,3 +153,6 @@ with tab1:
     col1, col2, col3 = st.columns(3)
     
     with col1:
+        st.info("⚓ Mechanical Properties")
+        st.metric("Tensile Strength (TS)", f"{predictions['Tensile_Strength']:.2f} MPa")
+        st.metric("Elastic Modulus", f"{predictions['Modulus']:.2f} MPa")
